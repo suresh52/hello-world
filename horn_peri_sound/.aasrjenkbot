@@ -1,0 +1,13 @@
+#!groovy
+
+// Dynamic Library retrieval, will load the groovyfiles at the vars folder for usage later on
+library changelog: false,
+    identifier: 'common_jenkins@main',
+    retriever: modernSCM([
+        $class: 'GitSCMSource',
+        credentialsId: 'aasrjenk_git',
+        remote: 'git@github.ford.com:FNV4-FordOS/autosar.classic.jenkins.git',
+        traits: [gitBranchDiscovery()]
+    ])
+
+veds_mbd_tests()

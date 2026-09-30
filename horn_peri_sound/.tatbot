@@ -1,0 +1,12 @@
+#!groovy
+
+library identifier: 'fnv4-fordos-test-jenkins-pipeline-lib@main', retriever: modernSCM(
+        github(
+                apiUri: 'https://github.ford.com/api/v3',
+                credentialsId: 'fnvtat-github-token',
+                repoOwner: 'FNV4-FordOS-Test',
+                repository: 'jenkins-pipeline-lib'
+        )
+)
+
+baseSlashTestsProject(skip_py36: true)

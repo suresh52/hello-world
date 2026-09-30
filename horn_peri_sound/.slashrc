@@ -1,0 +1,31 @@
+# This file will change Slash's log directory to .\logs
+# The log file will also include test names and a time stamp
+# The default configuration will be applied to Slash here when lines 12 and
+# 27 are uncommented.
+# Add code here to customize how Slash will execute your test cases
+# https://slash.readthedocs.io/en/master/customizing_slash.html
+
+import slash
+import datetime
+
+import logging
+from logbook.compat import redirect_logging
+
+redirect_logging()
+
+d = datetime.datetime.now()
+y = '{:%Y-%m-%dT%H_%M_%S}'.format(d)
+
+slash.config.root.log.root = "logs"
+slash.config.root.log.subpath = '/'.join([
+    "{context.session.id}",
+    "%s_{context.test.__slash__.module_name}" % y,
+    "{context.test.id}_.log"
+])
+slash.config.root.log.session_subpath = '{context.session.id}/session.log'
+
+slash.config.root.run.default_sources = ["tests"]
+
+# Shut up Paramiko
+paramiko_logger = logging.getLogger("paramiko.transport")
+paramiko_logger.disabled = True

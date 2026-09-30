@@ -1,0 +1,39 @@
+{
+    "PATA_CCZM": {
+        "SW_MODULE_NAME": "horn_perimeter_alarm",
+        "SW_MODEL_FILE": "doc/PerimeterAlrmVehMdeNewTrgEvnt/PerimeterAlrmVehMdeNewTrgEvnt.arxml",
+        "SW_COMPONENTS": "PerimeterAlrmVehMdeNewTrgEvnt",
+        "script_to_use": "run-rh850-sim pata",
+        "conan_lock_refs": [],
+        "testrail_enable": true,
+        "TESTRAIL": {
+            "project_name": "Zonal Program",
+            "milestone_name": "Platform-Non-Release Integration and Functional Testing(Master)",
+            "submilestone_name": "FunctionalTesting",
+            "testplan_name": "MBD_PATA_CCZM",
+            "description": "NB runs for Non Release",
+            "test_suite_name": "Platform_HornAlarmSounderService",
+            "test_section_ids": "450465",
+            "automation_status": "Completed"
+        }
+    },
+    "SOS_CCZM": {
+        "SW_MODULE_NAME": "horn_perimeter_alarm",
+        "SW_MODEL_FILE": "doc/SOSPostCrashAlert/SOSPostCrashAlert.arxml",
+        "SW_COMPONENTS": "SOSPostCrashAlert",
+        "script_to_use": "run-rh850-sim sos",
+        "conan_lock_refs": [],
+        "testrail_enable": true,
+        "TESTRAIL": {
+            "project_name": "Zonal Program",
+            "milestone_name": "Platform-Non-Release Integration and Functional Testing(Master)",
+            "submilestone_name": "FunctionalTesting",
+            "testplan_name": "MBD_SOS_CCZM",
+            "description": "NB runs for Non Release",
+            "test_suite_name": "Platform_HornAlarmSounderService",
+            "test_section_ids": "76877",
+            "automation_status": "Completed"
+        }
+    }
+}
+

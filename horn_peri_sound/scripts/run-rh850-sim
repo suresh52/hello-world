@@ -1,0 +1,107 @@
+#!/bin/bash
+
+# This script is intended to run all the tests cases in both developer's machine as well as in the CI/CD pipeline.
+
+set -ex
+
+# Reference: https://github.com/ford-innersource/apps.sims.vehicle.fordsim.vlab-framework/blob/main/J721EvEVM/test/run_integration_test.sh
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+# use script from Vlab Framework folder and set vlab version explicitly  
+source "$VEDS_PATH/scripts/activate-vlab"
+
+# check if coverage parameter is provided in command
+if [ -z $3 ]; then
+	export GEN_COVERAGE=0
+else
+	export GEN_COVERAGE=1
+fi
+
+# check if CPU-LIMIT parameter is provided in command
+if [ -n $4 ]; then
+	export USABLE_PROCS=$4
+fi
+
+# Create a new coverage folder only if it does not exist to store coverage data 
+export coverage_folder=$script_dir/coverage
+
+mkdir -p -m 777 $coverage_folder
+
+
+# This function will execute at the end of this script execution
+trap display_coverage EXIT
+
+display_coverage()
+{
+  if test -f $coverage_folder/aggregated_coverage.txt; then
+  	# Display aggregated coverage
+  	vlab $script_dir/create_coverage_report.py
+  	echo "The aggregated coverage is calculated by excluding files: Mfx.*, Mfl.*, Ifx.*, Ifl.*, Efx.*, (Unknown), start.850, main.c, print.c"
+    	cat $coverage_folder/updated_aggregated_coverage.txt
+  	if  [ "$GEN_COVERAGE" = 1 ]; then
+  		echo "Generate annotation files"
+		#Generating annotation source files
+		vlab coverage $coverage_folder $coverage_folder
+	fi
+
+  else
+      echo "No Coverage data found"
+  fi
+
+  source "$VEDS_PATH/scripts/deactivate-vlab"
+
+  exit
+}
+
+# The variable SLASH_OPTS_ORCH is used within the CI/CD pipeline to pass custom flags to the slash environment,
+# when running locally it shoulnd't exist, so default it to just the xunit report
+if [ -z ${SLASH_OPTS_ORCH+x} ]; then
+    SLASH_OPTS_ORCH="--with-xunit"
+fi
+# Add here another set of test cases that need to be run but don't need testrail traceability
+# Check if USABLE_PROCS is already set
+if [ -n "$USABLE_PROCS" ]; then
+    # Check if USABLE_PROCS is set and greater than 99
+    if [[ $USABLE_PROCS =~ ^[0-9]+$ && $USABLE_PROCS -le 99 ]]; then
+        echo "Using existing setting of USABLE_PROCS=$USABLE_PROCS"
+    else
+        # Calculate NPROCS if USABLE_PROCS is not set or not greater than 99
+        NPROCS=$(nproc)
+
+        # Calculate the usable number of processors
+        USABLE_PROCS=$((NPROCS - 2))
+
+        # Make sure USABLE_PROCS is at least 1
+        if [ $USABLE_PROCS -lt 1 ]; then
+            USABLE_PROCS=1
+        fi
+    fi
+else
+    # Get the number of processors
+    USABLE_PROCS=1
+fi
+
+if [ $USABLE_PROCS -lt 2 ]; then
+    PAR_COMMAND=""
+else
+    PAR_COMMAND="--parallel "
+    PAR_COMMAND+=$USABLE_PROCS
+fi
+
+# Run all tests here, should run in a single command all the tests that should be traced to testrail.
+if [[ $1 =~ ^(Debug|Debug-ide|Release)$ ]]; then
+    export BUILD_TYPE=$1
+    if [ -z $2 ]; then
+        slash -vvv run $SLASH_OPTS_ORCH tests/rh850_test_mgrs/ $PAR_COMMAND
+    else
+        # Run only the sustring test cases if passed
+        slash -vvv run $SLASH_OPTS_ORCH -k "$2" tests/rh850_test_mgrs/ $PAR_COMMAND
+    fi
+elif [ $# -eq 0 ]; then
+    slash -vvv run $SLASH_OPTS_ORCH tests/rh850_test_mgrs/ $PAR_COMMAND
+else
+    script_name="$1"
+    slash -vvv run $SLASH_OPTS_ORCH tests/rh850_test_mgrs/$script_name $PAR_COMMAND
+fi
+

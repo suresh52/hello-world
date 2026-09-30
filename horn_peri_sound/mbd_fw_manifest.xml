@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+    <remote name="origin" fetch="ssh://git@github.ford.com/"/>
+    <default revision="main" remote="origin"/>
+
+    <project path="scripts/Common" name="FNV4-FordOS/autosar.classic.common.scripts" revision="2830c96d0b2431aa96b1b95da782ee209e783805"/>
+
+</manifest>

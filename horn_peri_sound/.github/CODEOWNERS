@@ -1,0 +1,5 @@
+# See CODEOWNERS docs for more information
+# https://docs.github.com/en/enterprise-server@2.22/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Add new lines below the next line for specific code owners.  The first line will be a fallback owner for any code that doesn't get captured by more specific rules
+* @amerkulo @jnnacho @mgora1 @pfarkas3 @clambiri @sghai @SIMAM5 @vmani2

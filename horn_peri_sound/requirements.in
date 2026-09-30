@@ -1,0 +1,14 @@
+# File that lists all your Python dependencies (one dependency per row)
+# Read more here:
+# https://pip.pypa.io/en/stable/user_guide/?highlight=-r#requirements-files
+--index-url http://pypi.tat.ford.com/root/internal/+simple/
+--trusted-host pypi.tat.ford.com
+
+common-lib>=2.4.1
+tat-slash==1.16.2
+testrail-interface==1.5.6
+
+# This is a temporary solution until the package is published in TAT PyPi server
+# git+https://github.ford.com/FNV4-FordOS-Test/testbed-lib.git
+# git+https://github.ford.com/FNV4-FordOS-Test/testbed-test-lib.git
+typing-extensions==4.4.0

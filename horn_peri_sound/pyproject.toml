@@ -1,0 +1,76 @@
+[tool.poetry]
+name = "veds"
+version = "0.1.0"
+description = "Virtual ECU Development Studio - RH850 MBD Framework"
+license = "Proprietary"
+authors = ["Joseph Nnacho <jnnacho@ford.com>"]
+readme = "README.md"
+homepage = "https://github.ford.com/FNV4-FordOS/veds.rh850.mbd.framework"
+repository = "https://github.ford.com/FNV4-FordOS/veds.rh850.mbd.framework"
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+lxml = "^4.9.3"
+
+[tool.poetry.group.dev.dependencies]
+conan = "^2.0.0"
+black = "^22.12.0"
+ruff = "^0.0.260"
+cmake = "^3.24.1"
+ninja = "^1.11.1"
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+select = [
+    # pyflakes
+    "F",
+    # pycodestyle
+    "E", "W",
+    # pydocstyle
+    "D2", "D3", "D4",
+    # isort
+    "I",
+    # pep8-naming
+    "N",
+    # pyupgrade
+    "UP",
+    # flake8-2020
+    "YTT",
+    # flake8-bugbear
+    "B",
+    # flake8-comprehensions
+    "C4",
+    # flake8-executable
+    "EXE",
+    # flake8-implicit-str-concat
+    "ISC",
+    # flake8-pyi
+    "PYI",
+    # flake8-return
+    "RET",
+    # flake8-simplify
+    "SIM",
+    # mccabe
+    "C90",
+    # eradicate
+    "ERA",
+    # pylint
+    "PLC", "PLE", "PIE",
+    # tidy imports
+    "TID",
+]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+

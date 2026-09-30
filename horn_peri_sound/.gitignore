@@ -1,0 +1,83 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debug directory (skip build generated C/CPP files)
+build
+*-build-*
+
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+work/**
+
+#miscellaneous
+CMakeUserPresets.json
+
+#IDE Files
+.vscode/**
+
+# Ignore Google Repo polyspace
+/scripts/Common
+
+# Ignore Google Repo Stuff
+.repo/
+scripts/Common
+
+# Sonarqube
+.scannerwork/
+!scripts/conan-recipes/sonar-build-wrapper/
+make/*
+
+# Eclipse
+.cproject
+.project
+.pydevproject
+.settings/*
+
+
+# mbd conan package
+test.*
+
+# Slash environment
+logs/*
+testsuite.xml
+__pycache__
