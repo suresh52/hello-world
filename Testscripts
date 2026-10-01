@@ -1,0 +1,15 @@
+def test_30sec_horn_press_threshold_at_less_than_30(self):
+        """       
+	If the Horn input from the driver is pressed for more than 30 seconds,
+	it must be disconnected by the Horn Microservice SWC to avoid horn burn out.
+	The deactivation duration for 5 seconds, shall be followed by reactuating horn service.
+        """
+        self.logger.info("test_30sec_horn_press_threshold_at_less_than_30")
+        log_file = slash.config.root.log.subpath.format(context=slash.context)
+        cmd = ["vlab", "FS_RH850_FUNC_TEST", "--testcase",
+               "run_30sec_horn_press_threshold_at_less_than_30"] + self.custom_elf_cmd
+
+        self.logger.info(VLAB_INFO)
+        self.logger.info(" ".join(cmd))
+        result = subprocess.run(cmd, check=False, cwd=self.script_folder)
+        assert result.returncode == 0, self.assert_str.format(log=log_file)

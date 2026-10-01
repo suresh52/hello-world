@@ -1,0 +1,375 @@
+================================================================================
+ ZIVOGIFT - CUSTOMER MESSAGES (WhatsApp Inbox)
+ LOCAL TESTING GUIDE  -  step by step, for a fresh laptop
+================================================================================
+
+ Written so you can pick this up days later on a different machine with no
+ memory of the setup. Follow the parts in order. Every step says what you
+ should SEE, so you always know whether it worked.
+
+ COST: Parts A-E cost ZERO Netlify credits. Nothing runs on Netlify's
+ servers. Only the final production deploy (Part G) costs 15 credits.
+
+ TIME: about 45-60 minutes the first time.
+
+
+--------------------------------------------------------------------------------
+ BEFORE YOU HAND IN THE OFFICE LAPTOP - DO THIS TODAY
+--------------------------------------------------------------------------------
+
+ Save these files OFF the office laptop (personal email, personal Google
+ Drive, or a pen drive):
+
+   [ ] ZG_CustomerMessages_v1.zip   (the 22-file main package)
+   [ ] ZG_LocalTest_Addon.zip       (this guide + tools/wa-fake-inbound.js)
+
+ Your code itself is safe on GitHub. Your secrets are safe in Netlify's
+ environment variables. Neither depends on this laptop. You will NOT need
+ to retype any keys later.
+
+
+================================================================================
+ PART A - ONE-TIME SETUP ON THE NEW LAPTOP
+================================================================================
+
+ A1. Install Node.js 18 or newer (LTS)
+     https://nodejs.org  -> download LTS -> install with defaults.
+     Check (open a NEW PowerShell window after installing):
+
+        node -v
+        npm -v
+
+     SEE: node v18.x or higher (v20/v22 is fine).
+
+ A2. Install Git
+     https://git-scm.com/download/win -> install with defaults.
+     Check:   git --version
+
+ A3. Install the Netlify CLI
+        npm install -g netlify-cli
+        netlify --version
+
+     SEE: a version number like netlify-cli/17.x or higher.
+
+ A4. Get your code
+        cd $HOME\Documents
+        git clone https://github.com/<your-username>/<your-zivogift-repo>.git zivogift
+        cd zivogift
+
+     If GitHub asks for a password, use a Personal Access Token, not your
+     account password (GitHub -> Settings -> Developer settings -> Tokens).
+     NEVER paste a token into a chat or commit it into a file.
+
+ A5. Drop in the new files
+     Unzip BOTH zips INTO the repo root (the folder that has netlify.toml).
+     Allow it to overwrite.
+
+     Check the files landed in the right places:
+
+        dir netlify\functions\_lib\waInbox.js
+        dir netlify\functions\admin-inbox.js
+        dir js\admin-inbox.js
+        dir tools\wa-fake-inbound.js
+        dir supabase\consolidated\80_whatsapp_inbox.sql
+
+     SEE: each file is found. If one says "File Not Found", it was unzipped
+     one folder too deep. Look for a nested folder and move its contents up.
+
+ A6. Install the project's packages
+        npm install
+
+     SEE: finishes with "added N packages". A few "deprecated" warnings are
+     normal. Red "ERR!" lines are not.
+
+ A7. Connect to your Netlify site (this pulls in all your env vars)
+        netlify login        (a browser opens -> Authorize)
+        netlify link         (choose "Use current git remote origin")
+
+     Check:
+        netlify env:list
+
+     SEE: your variable names listed, including WHATSAPP_APP_SECRET,
+     WHATSAPP_TOKEN, SUPABASE_URL and similar. If WHATSAPP_APP_SECRET is
+     missing, add it in Netlify -> Site configuration -> Environment
+     variables BEFORE continuing. Without it nothing in this feature works.
+     (Meta App Dashboard -> Settings -> Basic -> App Secret)
+
+     Also add ADMIN_NOTIFY_EMAIL (your email) if it isn't there yet. That
+     is how you receive the free "customer messaged you" alert.
+
+
+================================================================================
+ PART B - DATABASE (one time, about 5 minutes)
+================================================================================
+
+ This writes to your LIVE Supabase. It is safe: it only CREATES new tables
+ and never changes or deletes anything your live site uses.
+
+ B1. Supabase dashboard -> your project -> SQL Editor -> New query
+ B2. Open supabase\consolidated\80_whatsapp_inbox.sql in Notepad, copy ALL
+     of it, paste, and click Run.
+
+     SEE: "Success. No rows returned"
+
+ B3. Check it worked (new query):
+
+        select count(*) from public.wa_contacts;
+        select count(*) from public.wa_messages;
+        select key, value from public.admin_settings where key like 'pause_wa%';
+
+     SEE:
+       - two counts. Zero is fine; a number means old history was backfilled.
+       - pause_wa_alerts = false   (email alerts ON - free)
+       - pause_wa_relay  = true    (personal-number relay OFF - it costs money)
+
+     If you see "relation admin_settings does not exist": your earlier
+     60_campaigns_and_admin_ops.sql was never run. Run that first, then
+     run 80 again.
+
+
+================================================================================
+ PART C - STRUCTURE CHECK (30 seconds, no network)
+================================================================================
+
+        node tools\wa-inbox-verify.js
+
+     SEE at the bottom:   N passed   0 failed
+
+     Yellow "!" notes are fine. Any red "X" means a file is missing or in
+     the wrong place. Re-check step A5.
+
+
+================================================================================
+ PART D - RUN THE SITE LOCALLY
+================================================================================
+
+ D1. Start it (leave this window open the whole time):
+
+        netlify dev
+
+     SEE: a box saying "Server now ready on http://localhost:8888"
+     The first start can take a minute.
+
+ D2. Open in Chrome:   http://localhost:8888/admin.html
+     Log in with your normal admin account.
+
+ D3. Check the new tab
+     [ ] A "Messages" button is in the left menu, above Campaigns
+     [ ] Clicking it shows CUSTOMER MESSAGES with a list and a thread pane
+     [ ] No red error text in the panel
+     [ ] Other tabs (Orders, Campaigns, Emergency) still work - click each
+
+ D4. Check the Emergency tab
+     Click Emergency -> Re-check. Find the "inbox" section.
+
+     SEE:
+       - webhook_can_receive: true
+       - wa_contacts / wa_messages / wa_webhook_failures listed as ok
+
+     If webhook_can_receive is false: WHATSAPP_APP_SECRET or
+     WHATSAPP_WEBHOOK_VERIFY_TOKEN is missing (see A7).
+
+
+ >>> IMPORTANT FOR EVERYTHING BELOW <<<
+ Local mode uses your REAL Supabase and REAL WhatsApp account. A reply you
+ send to a REAL phone number from the local dashboard is a REAL message.
+ The fake test customer below is safe because that number doesn't exist.
+
+
+================================================================================
+ PART E - THE MAIN TEST: FAKE INCOMING CUSTOMER MESSAGES
+================================================================================
+
+ Meta cannot send webhooks to your laptop, so this tool sends a correctly
+ signed fake one to your local webhook. It contains 6 kinds of message:
+ text, photo, voice note, PDF, location, and an unknown future type.
+
+ The OLD code silently threw away 5 of these 6. This test proves all 6
+ are now kept.
+
+ E1. Open a SECOND PowerShell window in the same folder (keep netlify dev
+     running in the first) and run:
+
+        netlify dev:exec node tools/wa-fake-inbound.js
+
+     SEE:  -> HTTP 200 OK
+           and the line "Webhook accepted it"
+
+     Use "netlify dev:exec", NOT plain "node". dev:exec loads your
+     WHATSAPP_APP_SECRET. Plain node gives the error "not set".
+
+ E2. Check the dashboard
+     Go to the browser -> Messages -> Refresh.
+
+     [ ] A conversation "Test Customer" appears, with a red unread badge
+     [ ] Open it: ALL 6 messages are there, in order:
+           - "Hi, I need 50 Gift Boxes..."   (normal capitals, not ALL CAPS)
+           - Load image button + "Our company logo for the boxes"
+           - Load audio button
+           - PO_Diwali_2026.pdf
+           - Our Office - MG Road, Bangalore - 12.97...
+           - (unsupported)
+     [ ] Opening the thread clears the unread badge
+     [ ] Header shows the green "Free reply open - 23h ..." label
+
+ E3. Check the email
+     [ ] An email "WhatsApp from Test Customer (9000000001)" arrived at
+         ADMIN_NOTIFY_EMAIL (check spam the first time)
+
+ E4. Check the database (Supabase SQL Editor)
+
+        select msg_type, body from public.wa_messages
+        where phone10 = '9000000001' order by created_at;
+
+        select count(*) from public.wa_webhook_failures where resolved = false;
+
+     SEE: 6 rows. Failures count is 0.
+
+ E5. Duplicate protection (Meta re-sends webhooks - nothing may double up)
+     The tool makes fresh message IDs on every run, so running it again
+     SHOULD add 6 more. That's correct. To test dedupe itself, look at the
+     netlify dev window: there must be no errors during either run.
+
+ E6. Failures that are EXPECTED (the test number and media are fake)
+     [ ] Click "Load image" -> shows an error like "Could not resolve
+         media". GOOD - it reports honestly instead of spinning forever.
+     [ ] Type a reply and Send -> shows an error from Meta (the number
+         doesn't exist). GOOD - and the failed reply appears in the thread
+         with a red "failed" mark, so you never think it was sent.
+
+ E7. The 24-hour window switch (no need to wait a day)
+     In Supabase:
+
+        update public.wa_contacts
+        set window_expires_at = now() - interval '1 hour'
+        where phone10 = '9000000001';
+
+     Click the conversation again.
+     [ ] The text box is GONE
+     [ ] Replaced by "More than 24 hours have passed..." and a template
+         dropdown listing your APPROVED templates
+
+ E8. Mark done
+     [ ] Click "Mark done" -> it changes to "Reopen"; the "closed" filter
+         shows it
+     [ ] Run the fake tool again -> the conversation REOPENS by itself
+         (a customer writing back must never stay hidden)
+
+ E9. CLEAN UP (removes the fake customer and all their messages):
+
+        delete from public.wa_contacts where phone10 = '9000000001';
+
+
+================================================================================
+ PART F - ONE REAL END-TO-END REPLY (optional, sends a real message)
+================================================================================
+
+ Only possible from a number that messaged your business number in the
+ last 24 hours through the CLOUD API. Before the migration that is usually
+ nobody, so it is fine to skip this until after Part H.
+
+ Before migration, you CAN still check that real outbound works:
+   Emergency tab -> "Test WhatsApp" -> your own phone number.
+   SEE: you receive the template message on your phone.
+
+
+================================================================================
+ PART G - GOING LIVE (when Parts A-E all pass)
+================================================================================
+
+ G1. Stop netlify dev (Ctrl+C in that window).
+
+ G2. OPTIONAL, FREE - preview on a branch first:
+        git checkout -b inbox-test
+        git add .
+        git commit -m "Customer Messages inbox"
+        git push -u origin inbox-test
+
+     Netlify builds a separate preview URL at NO credit cost (enable
+     branch deploys under Site configuration -> Build & deploy -> Branches).
+     Do NOT point Meta's webhook at this preview URL.
+
+ G3. Production - ONE deploy, 15 credits:
+        git checkout main
+        git merge inbox-test        (or: git add . / git commit, if you skipped G2)
+        git push
+
+     Wait for Netlify to show "Published".
+
+ G4. Live sanity check:
+     https://zivogift.com/admin.html -> Messages tab opens,
+     Emergency -> Re-check -> inbox section is ok.
+
+
+================================================================================
+ PART H - META WEBHOOK + NUMBER MIGRATION (the irreversible part)
+================================================================================
+
+ H1. Meta Developer Console -> WhatsApp -> Configuration -> Webhook
+       Callback URL:  https://zivogift.com/.netlify/functions/whatsapp-webhook
+       Verify token:  the value of WHATSAPP_WEBHOOK_VERIFY_TOKEN
+       -> "Verify and save"   (SEE: it saves without an error)
+       -> Webhook fields -> "messages" -> Subscribe   <-- REQUIRED
+
+ H2. BEFORE MIGRATING, in the WhatsApp Business app on your phone:
+     [ ] Export important chats (open chat -> menu -> More -> Export chat).
+         Old conversations do NOT carry over to the Cloud API.
+     [ ] Re-engagement template submitted and APPROVED (see the DEPLOY .md)
+     [ ] Know your 2-step verification PIN
+
+ H3. Migrate the number in WhatsApp Manager (Business App -> Cloud API).
+     After this, the Business app on your phone stops working for this
+     number. That is expected.
+
+ H4. FINAL TEST - the one that matters
+     From any other phone, send to the ZivoGift number:
+       a text, a photo, a voice note, a PDF
+     [ ] Email alert arrives
+     [ ] All 4 appear in Messages
+     [ ] "Load" on the photo shows the real image this time
+     [ ] Reply from the dashboard -> it arrives on that phone
+     [ ] Ticks change from sent to delivered (blue = read)
+
+
+================================================================================
+ TROUBLESHOOTING
+================================================================================
+
+ Symptom                                  Fix
+ ---------------------------------------- -------------------------------------
+ 'netlify' is not recognized              Close and reopen PowerShell after A3.
+                                          Still failing: npm install -g netlify-cli
+ Scripts disabled on this system          Run once:
+                                          Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+ Fake tool: "WHATSAPP_APP_SECRET is not   You used plain "node". Use
+   set"                                   netlify dev:exec node tools/wa-fake-inbound.js
+ Fake tool: HTTP 401                      Secret mismatch. Check A7, then restart netlify dev
+ Fake tool: "Could not reach"             netlify dev is not running, or is on a
+                                          different port. Pass --url=http://localhost:PORT/.netlify/functions/whatsapp-webhook
+ Messages tab: "relation does not exist"  Part B was not run
+ Messages tab is blank / spinning         Browser F12 -> Console, read the red error
+ 403 / not_admin on the tab               Your profile needs admin rights:
+                                          update public.profiles set is_admin = true where id = '<your user id>';
+ No alert email                           ADMIN_NOTIFY_EMAIL is not set, or the
+                                          pause_wa_alerts value is true. Check spam.
+ After going live, inbox stays empty      WHATSAPP_APP_SECRET is missing on Netlify,
+                                          or "messages" isn't subscribed in Meta (H1)
+ Anything in wa_webhook_failures          Not lost. The raw message is saved.
+                                          Copy the "stage" and "error" columns
+                                          and ask for a fix.
+
+
+================================================================================
+ TURNING THE PAID PERSONAL-NUMBER RELAY ON (optional, any time later)
+================================================================================
+
+ 1. Netlify env var:  ADMIN_WHATSAPP_NUMBER = your personal number
+ 2. Supabase:
+        update public.admin_settings set value = false where key = 'pause_wa_relay';
+ 3. Your phone gets each customer message on WhatsApp. To reply to it:
+        - long-press the forwarded message -> Reply, OR
+        - type:  9876543210 your reply here
+    Commands:  LIST   CLOSE 9876543210   HELP
+ To turn it OFF again:  set value = true. No redeploy needed.
+
+================================================================================

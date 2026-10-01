@@ -1,0 +1,27 @@
+def run_honk_activation(args):
+        """
+         Verify actuateHorn method request from Client to Server is accepted for
+         the specific horn pattern:honk.
+        """
+        """
+            Input:
+            Horn pattern= 3
+            numberofRepetitions=10
+            pauseTime=1000ms
+            pauseTime_flag=0
+        """
+        input_list = [3, 10, 1000, 0]
+
+        """
+            Expected output:
+            actuateHorn output = E_OK
+        """
+        expected_output_list = [0]
+        testid = TEST_HONK_ACTIVATION
+        global is_test_finished
+        is_test_finished = False
+        test_buffer_in = input_list + expected_output_list
+        print('Running test id : {0}'.format(testid))
+        print('Input data : {0}'.format(input_list))
+        print('Expected data : {0}'.format(expected_output_list))
+        testbench.fsim_py_testbench_execute_test(testid, test_buffer_in)

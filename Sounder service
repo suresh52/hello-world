@@ -1,0 +1,16 @@
+pausetime_inputs = ["R_VAL50-E_OK",
+                     "R_VAL101-INVALID_PARAMETER"]
+
+    @slash.parametrize('pausetime_inp', pausetime_inputs)
+    def test_actuate_sounder_pausetime(self, pausetime_inp):
+        """
+        Run Test - test_actuate_sounder_pausetime
+        https://ford.atlassian.net/browse/ZOPRO-19198
+        """
+
+        result = self.execute_vlab_test("test_actuate_sounder_pausetime", inputs=pausetime_inp)
+        self._assert_return_code(result)
+        
+        PBR_VAL0,PBR_VAL1 = 1,PBR_VAL10 = 10,PBR_VAL50 = 50,PBR_VAL1000 = 1000,PBR_VAL1001
+        
+        PBR_VAL1001 = 1001PBR_VAL1001 = 1001

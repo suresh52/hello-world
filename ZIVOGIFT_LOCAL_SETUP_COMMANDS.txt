@@ -1,0 +1,470 @@
+ZIVOGIFT - WINDOWS LOCAL DEVELOPMENT SETUP
+============================================
+
+Purpose
+-------
+Use this guide to install Node.js, Git, and Netlify CLI, connect the local
+ZivoGift folder to the existing Netlify project, run it locally, and deploy safely.
+
+IMPORTANT SAFETY NOTES
+----------------------
+1. Run commands from Command Prompt or PowerShell.
+2. Never put API keys, tokens, passwords, Cashfree secrets, Supabase service-role
+   keys, or GitHub personal access tokens inside Git commands or commit them.
+3. Do not delete package-lock.json unless dependency recovery specifically requires it.
+4. Before a production deployment, test locally and preferably create a draft deploy.
+5. Replace C:\Projects\ZivoGift below with your actual ZivoGift folder path.
+
+
+SECTION 1 - FIRST-TIME MACHINE SETUP
+=====================================
+
+A. Install Node.js 22 LTS using Windows Package Manager
+-------------------------------------------------------
+Open PowerShell or Command Prompt as Administrator:
+
+winget install OpenJS.NodeJS.LTS
+
+Close and reopen the terminal, then verify:
+
+node --version
+npm --version
+
+If winget is unavailable, download the LTS installer from the official Node.js website.
+
+
+B. Install Git
+--------------
+
+winget install Git.Git
+
+Close and reopen the terminal, then verify:
+
+git --version
+
+
+C. Install Netlify CLI globally
+-------------------------------
+
+npm install -g netlify-cli
+
+Verify:
+
+netlify --version
+netlify help
+
+To update Netlify CLI later:
+
+npm update -g netlify-cli
+
+
+SECTION 2 - FIRST-TIME ZIVOGIFT PROJECT SETUP
+==============================================
+
+A. Go to the project folder
+---------------------------
+
+cd /d C:\Projects\ZivoGift
+
+PowerShell alternative:
+
+cd C:\Projects\ZivoGift
+
+
+B. Confirm that this is the correct project
+--------------------------------------------
+
+dir
+
+git status
+
+You should normally see files such as package.json, netlify.toml, the frontend
+files, and the netlify functions folder used by ZivoGift.
+
+
+C. Install the exact locked dependencies
+-----------------------------------------
+
+If package-lock.json exists, use:
+
+npm ci
+
+If package-lock.json does not exist, use:
+
+npm install
+
+Check available project scripts:
+
+npm run
+
+Optional security report only:
+
+npm audit
+
+Do not run "npm audit fix --force" blindly because it can introduce breaking changes.
+
+
+D. Sign in to Netlify
+---------------------
+
+netlify login
+
+A browser window opens. Sign in to the Netlify account that owns ZivoGift.
+Then confirm authentication:
+
+netlify status
+
+
+E. Link this local folder to the EXISTING ZivoGift Netlify project
+------------------------------------------------------------------
+
+netlify link
+
+Choose the existing ZivoGift project. Do not create a new project by mistake.
+The link is stored locally in .netlify/state.json.
+
+Confirm the linked project:
+
+netlify status
+
+
+F. Environment variables
+------------------------
+
+For linked projects, "netlify dev" uses Netlify environment variables available
+for the dev or all deploy contexts. To inspect variable names:
+
+netlify env:list
+
+To pull Netlify variables into a local file when needed:
+
+netlify env:pull .env
+
+IMPORTANT:
+- Treat .env as secret.
+- Ensure .env is listed in .gitignore.
+- Never commit .env.
+- Prefer Netlify-managed environment variables for shared/production configuration.
+
+Check whether .env is ignored:
+
+git check-ignore .env
+
+If the command prints .env, it is ignored correctly.
+
+
+SECTION 3 - RUN ZIVOGIFT LOCALLY
+=================================
+
+A. Recommended command
+----------------------
+
+cd /d C:\Projects\ZivoGift
+netlify dev
+
+Open the Local URL displayed by Netlify CLI, commonly:
+
+http://localhost:8888
+
+Keep the terminal open while testing. Stop the server with:
+
+Ctrl+C
+
+
+B. Run with production-context environment settings only when intentionally needed
+-------------------------------------------------------------------------------
+
+netlify dev --context production
+
+Be careful because this may use production-context variables and live external services.
+Normal local work should use:
+
+netlify dev
+
+
+C. Run on another port if the default port is busy
+--------------------------------------------------
+
+netlify dev --port 9999
+
+Open:
+
+http://localhost:9999
+
+
+D. Frontend-only command, if package.json provides one
+------------------------------------------------------
+
+First inspect scripts:
+
+npm run
+
+Then use the script actually listed, for example:
+
+npm run dev
+
+For ZivoGift functions, redirects, headers, and Netlify environment behavior,
+prefer "netlify dev" over a frontend-only server.
+
+
+SECTION 4 - ZIVOGIFT DAILY START COMMANDS
+==========================================
+
+cd /d C:\Projects\ZivoGift
+git status
+git pull --ff-only
+npm ci
+netlify dev
+
+Notes:
+- If dependencies have not changed, npm ci can be skipped during routine work.
+- Use "git pull --ff-only" to avoid an unexpected merge commit.
+- If you have uncommitted changes, review "git status" before pulling.
+
+
+SECTION 5 - GIT COMMANDS FOR DAILY WORK
+========================================
+
+Check repository and changed files:
+
+git status
+
+Show current branch:
+
+git branch --show-current
+
+View remote repository:
+
+git remote -v
+
+View changes:
+
+git diff
+
+Pull safely:
+
+git pull --ff-only
+
+Stage all intended changes:
+
+git add .
+
+Review staged changes before committing:
+
+git diff --staged
+
+Commit:
+
+git commit -m "Describe the ZivoGift update clearly"
+
+Push the CURRENT branch without guessing main or master:
+
+git push origin HEAD
+
+View recent commits:
+
+git log --oneline -10
+
+IMPORTANT: Never use a GitHub token inside the repository URL. Use Git Credential
+Manager, browser authentication, or SSH authentication.
+
+
+SECTION 6 - LOCAL BUILD AND NETLIFY DEPLOYMENT
+===============================================
+
+A. Test Netlify build locally
+-----------------------------
+
+netlify build
+
+
+B. Create a draft deploy first
+------------------------------
+
+netlify deploy
+
+Review the generated draft URL and test the important ZivoGift flows.
+
+
+C. Deploy to production only after verification
+------------------------------------------------
+
+netlify deploy --prod
+
+If ZivoGift is connected to Git-based continuous deployment, the preferred normal
+production flow is often to push the reviewed commit and let Netlify build it:
+
+git push origin HEAD
+
+Use "netlify deploy --prod" only when you intentionally want a direct CLI deployment.
+
+
+SECTION 7 - USEFUL NETLIFY COMMANDS
+====================================
+
+netlify status
+netlify open
+netlify link
+netlify unlink
+netlify env:list
+netlify dev
+netlify build
+netlify deploy
+netlify deploy --prod
+netlify functions:list
+netlify help
+netlify dev --help
+
+Do not run "netlify unlink" unless you intentionally want to disconnect the local
+folder from its linked Netlify project.
+
+
+SECTION 8 - TROUBLESHOOTING
+============================
+
+A. node, npm, git, or netlify is not recognized
+------------------------------------------------
+Close and reopen Command Prompt/PowerShell and verify:
+
+where node
+where npm
+where git
+where netlify
+
+Then check:
+
+node --version
+npm --version
+git --version
+netlify --version
+
+
+B. Dependency installation problems
+-----------------------------------
+Try the safe clean installation first:
+
+npm ci
+
+If node_modules must be removed in Command Prompt:
+
+rmdir /s /q node_modules
+npm ci
+
+PowerShell equivalent:
+
+Remove-Item -Recurse -Force node_modules
+npm ci
+
+Keep package-lock.json unless you deliberately intend to recalculate dependency versions.
+
+
+C. Netlify project is not linked
+--------------------------------
+
+netlify link
+netlify status
+
+Select the existing ZivoGift project.
+
+
+D. Netlify login/session problem
+--------------------------------
+
+netlify logout
+netlify login
+netlify status
+
+
+E. Environment variable is missing
+----------------------------------
+
+netlify env:list
+
+Then verify the variable exists in Netlify and is available to the dev or all context.
+Restart "netlify dev" after changing environment variables.
+
+
+F. Port is already in use
+-------------------------
+
+netlify dev --port 9999
+
+
+G. Find what is using port 8888 on Windows
+------------------------------------------
+
+netstat -ano | findstr :8888
+
+Then identify the process using the PID:
+
+tasklist | findstr PID_NUMBER
+
+Only terminate it if you know it is safe:
+
+taskkill /PID PID_NUMBER /F
+
+
+H. Functions are not working locally
+------------------------------------
+Confirm that:
+- You started the project using "netlify dev".
+- netlify.toml points to the correct functions directory.
+- Required environment variables are available.
+- The terminal shows no function loading/runtime error.
+
+List detected functions:
+
+netlify functions:list
+
+
+SECTION 9 - QUICK COPY-PASTE BLOCKS
+====================================
+
+FIRST-TIME MACHINE SETUP:
+
+winget install OpenJS.NodeJS.LTS
+winget install Git.Git
+npm install -g netlify-cli
+node --version
+npm --version
+git --version
+netlify --version
+
+FIRST-TIME ZIVOGIFT FOLDER SETUP:
+
+cd /d C:\Projects\ZivoGift
+npm ci
+netlify login
+netlify link
+netlify status
+netlify env:list
+netlify dev
+
+DAILY LOCAL START:
+
+cd /d C:\Projects\ZivoGift
+git status
+git pull --ff-only
+netlify dev
+
+SAFE COMMIT AND PUSH:
+
+git status
+git diff
+git add .
+git diff --staged
+git commit -m "Describe the ZivoGift update clearly"
+git push origin HEAD
+
+SAFE DEPLOYMENT CHECK:
+
+netlify build
+netlify deploy
+
+PRODUCTION DEPLOY ONLY AFTER TESTING:
+
+netlify deploy --prod
+
+
+END OF GUIDE
+============
